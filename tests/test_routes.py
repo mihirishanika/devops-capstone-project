@@ -43,7 +43,6 @@ class TestAccountService(TestCase):
         """Runs before each test"""
         db.session.query(Account).delete()  # clean up the last tests
         db.session.commit()
-
         self.client = app.test_client()
 
     def tearDown(self):
@@ -53,7 +52,6 @@ class TestAccountService(TestCase):
     ######################################################################
     #  H E L P E R   M E T H O D S
     ######################################################################
-
     def _create_accounts(self, count):
         """Factory method to create accounts in bulk"""
         accounts = []
@@ -73,7 +71,6 @@ class TestAccountService(TestCase):
     ######################################################################
     #  A C C O U N T   T E S T   C A S E S
     ######################################################################
-
     def test_index(self):
         """It should get 200_OK from the Home Page"""
         response = self.client.get("/")
@@ -96,11 +93,9 @@ class TestAccountService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # Make sure location header is set
         location = response.headers.get("Location", None)
         self.assertIsNotNone(location)
 
-        # Check the data is correct
         new_account = response.get_json()
         self.assertEqual(new_account["name"], account.name)
         self.assertEqual(new_account["email"], account.email)
@@ -123,4 +118,23 @@ class TestAccountService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
-    # ADD YOUR TEST CASES HERE ...
+    def test_read_an_account(self):
+        """It should Read a single Account"""
+        account_data = {
+            "name": "Jane Doe",
+            "email": "jane@example.com",
+            "address": "123 Main Street",
+            "phone_number": "1234567890",
+            "date_joined": "2025-01-01"
+        }
+        create_resp = self.client.post(BASE_URL, json=account_data)
+        self.assertEqual(create_resp.status_code, status.HTTP_201_CREATED)
+
+        account_id = create_resp.get_json()["id"]
+
+        get_resp = self.client.get(f"{BASE_URL}/{account_id}")
+        self.assertEqual(get_resp.status_code, status.HTTP_200_OK)
+
+        data = get_resp.get_json()
+        self.assertEqual(data["name"], account_data["name"])
+        self.assertEqual(data["email"], account_data["email"])
