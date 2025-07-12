@@ -6,14 +6,19 @@ and SQL database
 """
 import sys
 from flask import Flask
+from flask_talisman import Talisman  # <-- import after Flask app
+
 from service import config
 from service.common import log_handlers
 
-# Create Flask application
+# Create the Flask app first
 app = Flask(__name__)
 app.config.from_object(config)
 
-# Import the routes After the Flask app is created
+# Now create the Talisman instance with the app
+talisman = Talisman(app)  # <-- must come AFTER app is created
+
+# Import routes and models after app creation to avoid circular import issues
 # pylint: disable=wrong-import-position, cyclic-import, wrong-import-order
 from service import routes, models  # noqa: F401 E402
 
