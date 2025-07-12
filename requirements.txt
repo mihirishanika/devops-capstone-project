@@ -2,8 +2,9 @@
 Werkzeug==2.1.2
 SQLAlchemy==1.4.46
 
-
+Flask
 Flask-Talisman
+Flask-Cors
 
 # Build dependencies
 Flask==2.1.2
