@@ -5,12 +5,14 @@ from tests.factories import AccountFactory
 from service.common import status
 from service.models import db, Account, init_db
 from service.routes import app
+from service import talisman  # ✅ Correct import here
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
 )
 
 BASE_URL = "/accounts"
+HTTPS_ENVIRON = {'wsgi.url_scheme': 'https'}  # ✅ For Talisman
 
 class TestAccountService(TestCase):
     """Account Service Tests"""
@@ -23,6 +25,7 @@ class TestAccountService(TestCase):
         app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
         app.logger.setLevel(logging.CRITICAL)
         init_db(app)
+        talisman.force_https = False  # ✅ Disable HTTPS enforcement during tests
 
     @classmethod
     def tearDownClass(cls):
@@ -101,7 +104,6 @@ class TestAccountService(TestCase):
         account_id = created["id"]
         response = self.client.delete(f"{BASE_URL}/{account_id}")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        # Confirm it's deleted
         get_resp = self.client.get(f"{BASE_URL}/{account_id}")
         self.assertEqual(get_resp.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -109,3 +111,16 @@ class TestAccountService(TestCase):
         """It should return 404 when deleting non-existent account"""
         response = self.client.delete(f"{BASE_URL}/0")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_security_headers(self):
+        """It should return security headers"""
+        response = self.client.get('/', environ_overrides=HTTPS_ENVIRON)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        headers = {
+            'X-Frame-Options': 'SAMEORIGIN',
+            'X-Content-Type-Options': 'nosniff',
+            'Content-Security-Policy': "default-src 'self'; object-src 'none'",
+            'Referrer-Policy': 'strict-origin-when-cross-origin'
+        }
+        for key, value in headers.items():
+            self.assertEqual(response.headers.get(key), value)
