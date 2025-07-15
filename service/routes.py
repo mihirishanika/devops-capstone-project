@@ -19,11 +19,15 @@ def health():
 
 
 ######################################################################
-# GET INDEX
+# GET INDEX (Root)
+# Add OPTIONS method explicitly so CORS preflight requests are handled
 ######################################################################
-@app.route("/")
+@app.route("/", methods=["GET", "OPTIONS"])
 def index():
     """Root URL response"""
+    if request.method == "OPTIONS":
+        # flask-cors will handle CORS preflight OPTIONS request automatically
+        return '', 200
     return (
         jsonify(
             name="Account REST API Service",

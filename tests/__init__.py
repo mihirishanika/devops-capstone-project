@@ -7,11 +7,10 @@ from service.common import log_handlers
 
 app = Flask(__name__)
 app.config.from_object('service.config')
-CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Setup security headers and CORS BEFORE importing routes
+# Setup CORS and security headers
+CORS(app, resources={r"/*": {"origins": "*"}})
 talisman = Talisman(app, force_https=False)  # Disable HTTPS redirect if desired
-CORS(app)
 
 # Import routes after app and middleware are setup
 from service import routes, models  # noqa: F401 E402
